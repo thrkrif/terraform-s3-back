@@ -2,7 +2,6 @@ package com.back.terraforms3
 
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
-import software.amazon.awssdk.services.s3.S3Client
 
 @RestController
 class HomeController (
@@ -15,7 +14,8 @@ class HomeController (
      *
      * ⭐️ 스프링 부트에 aws AccessKey 라든가 어떤 정보도 입력하지 않았는데 주입이 되었음!!!!!
      */
-    private val s3Client: S3Client
+//    private val s3Client: S3Client
+    private val s3Service: S3Service
 ) {
     @GetMapping("/")
     fun main(): String {
@@ -24,9 +24,6 @@ class HomeController (
 
     @GetMapping("/buckets")
     fun buckets(): List<String> {
-        return s3Client
-            .listBuckets()
-            .buckets()
-            .map { it.name() }
+        return s3Service.getBucketNames()
     }
 }

@@ -1,5 +1,6 @@
 package com.back.terraforms3
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -15,11 +16,12 @@ class HomeController (
      * ⭐️ 스프링 부트에 aws AccessKey 라든가 어떤 정보도 입력하지 않았는데 주입이 되었음!!!!!
      */
 //    private val s3Client: S3Client
-    private val s3Service: S3Service
+    private val s3Service: S3Service,
+    @Value("\${custom.secretWord") private val secretWord: String
 ) {
     @GetMapping("/")
     fun main(): String {
-        return "Hi"
+        return "secretWord: $secretWord"
     }
 
     @GetMapping("/buckets")

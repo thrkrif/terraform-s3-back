@@ -71,7 +71,31 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: [ buildImageAndPush ]
+    env:
+      DEPLOY_INSTANCE_NAME: terraform-ec2-1
     steps:
+      - name: 태그로 배포 대상 EC2 조회
+        id: find-instance
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=${DEPLOY_INSTANCE_NAME}" \
+                      "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].InstanceId | [0]' \
+            --output text)
+
+          if [[ -z "${INSTANCE_ID}" || "${INSTANCE_ID}" == "None" ]]; then
+            echo "실행 중인 배포 대상 EC2를 찾지 못했습니다: ${DEPLOY_INSTANCE_NAME}"
+            exit 1
+          fi
+
+          echo "배포 대상 EC2: ${INSTANCE_ID}"
+          echo "instance_id=${INSTANCE_ID}" >> "${GITHUB_OUTPUT}"
+
       - name: AWS SSM Send-Command
         uses: peterkimzz/aws-ssm-send-command@master
         id: ssm
@@ -79,7 +103,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          instance-ids: "i-0f05aaa654ebd4dbf"
+          instance-ids: ${{ steps.find-instance.outputs.instance_id }}
           working-directory: /
           comment: Deploy
           command: |
